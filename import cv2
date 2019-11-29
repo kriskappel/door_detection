@@ -1,0 +1,12 @@
+import cv2
+
+my=cv2.imread(r"example2.jpg")
+
+cv2.cv.fastNlMeansDenoisingColored(my,None,10,10,7,21)
+
+
+cv2.imshow("facedetective",my)
+
+
+
+cv2.waitKey(0)
