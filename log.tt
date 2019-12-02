@@ -1,0 +1,117 @@
+20c20
+< 		self.inv = cv2.bitwise_not(self.thresh)
+---
+> 		self.inv = cv2.bitwise_not(self.thresh) #inverse of the threshold resultant image, black background to subtract the mask.
+22c22
+< 		self.current_img = self.denoised	
+---
+> 		#self.current_img = self.denoised	
+26c26
+< 		return self.current_img
+---
+> 		return self.denoised
+34c34
+< 		self.features = cv2.goodFeaturesToTrack(self.current_img, 500, 0.04, 10)
+---
+> 		self.features = cv2.goodFeaturesToTrack(self.denoised, 500, 0.04, 10) #extract 500 features from the denoised image with 0.04 quality level and 10 as minimum distance
+38c38
+< 			x, y = ftr.ravel()
+---
+> 			x, y = ftr.ravel() #get x and y from the features
+42a43,44
+> 		#choose suitable features in the image that can compose horizontal lines
+> 
+47c49
+< 			x1, y1 = point.ravel()
+---
+> 			x1, y1 = point.ravel() #getting first point
+49c51
+< 			if x1 < self.width/2:
+---
+> 			if x1 < self.width/2: #first point on the first half of the image
+53c55
+< 					x2, y2 = point2.ravel()
+---
+> 					x2, y2 = point2.ravel() #getting second point
+55c57
+< 					if x2 > self.width/2 and abs(y1 - y2) < 10 : #in the first time it was 5
+---
+> 					if x2 > self.width/2 and abs(y1 - y2) < 10 : #second point on the other half of the image and the difference in height cannot exceed 10 pixels (on the first time it was 5)
+60c62
+< 						size = (math.sqrt( (x1 - x2)**2 + (y1 - y2)**2 )) / 800
+---
+> 						size = (math.sqrt( (x1 - x2)**2 + (y1 - y2)**2 )) / 800 #size related to the diagonal of an 640 x 480 image
+62c64
+< 						direc = (math.atan( abs(y1 - y2) / abs(x1 - x2) )) * (180 / math.pi)
+---
+> 						direc = (math.atan( abs(y1 - y2) / abs(x1 - x2) )) * (180 / math.pi) #direction between the 2 choosen points
+64c66
+< 						print size, direc
+---
+> 						#print size, direc
+69c71
+< 							self.points.append( ((x1,y1),(x2,y2,)) )
+---
+> 							self.points.append( ((x1,y1),(x2,y2,)) ) #add both points to the list
+74,75c76,77
+< 		self.points = sorted(self.points, key = lambda x: x[0][0])
+< 		#print self.points
+---
+> 		self.points = sorted(self.points, key = lambda x: x[0][0]) #sort it from its x coord
+> 		print "Number of horizontal lines: " + str(len(self.points))
+79a82,83
+> 		#function that connects horizontal lines with vertical lines to form possible squares
+> 
+84a89
+> 			#first line (2 points)
+90a96
+> 				#next line
+96c102
+< 				if ([x1, y1] != [x3, y3] and [x2, y2] != [x4, y4]):
+---
+> 				if ([x1, y1] != [x3, y3] and [x2, y2] != [x4, y4]): #do not take the same line
+98a105,106
+> 
+> 						#getting size and direction of vertical lines 
+104a113
+> 						#direction 0 is also 90 degrees in this case once both lines can have the same y point
+116a126
+> 									#calculating ratio between the line of the door,vertical lines should be bigger than horizontal
+120c130
+< 									print ratio
+---
+> 									#print ratio
+123c133
+< 										self.square_coords.append(((x1,y2),(x2,y2),(x3,y3), (x4,y4)))
+---
+> 										self.square_coords.append(((x1,y2),(x2,y2),(x3,y3), (x4,y4))) #saving 4 points of the square in a list
+127a138
+> 		print "Number of rectangles: " + str(len(self.square_coords))
+139,140c150
+< 		most_ones = np.zeros((1, 1, 1), dtype = "uint8")
+< 		mask = None
+---
+> 		#function that selects the best matching square and draws it
+141a152,154
+> 		most_ones = np.zeros((1, 1, 1), dtype = "uint8") #variable to save the best maching square
+> 		mask = None
+> 		i = 0
+144c157
+< 			img_door = np.zeros((640, 480, 1), dtype = "uint8")
+---
+> 			img_door = np.zeros((640, 480, 1), dtype = "uint8") #black mask with same image size
+154a168
+> 			#draw corners
+169,170c183,185
+< 			img2 = cv2.bitwise_and(self.inv, img_door)
+< 
+---
+> 			#and function between inverted threshold image and the rectangle drawn
+> 			#the best machting rectangle over the door frame should return the highest number of 1s
+> 			img2 = cv2.bitwise_and(self.inv, img_door) 
+171a187
+> 			#checking number of 1s on the resultant image and picking the one that has the most
+173c189
+< 				print img2.sum()
+---
+> 				#print img2.sum()
