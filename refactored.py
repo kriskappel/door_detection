@@ -11,6 +11,7 @@ class door_detector:
 
 		self.resized = cv2.resize(img, (480, 640)) #resizing to 640 x 480
 		self.gray = cv2.cvtColor(self.resized, cv2.COLOR_BGR2GRAY) #converting to grayscale
+
 		self.height, self.width = self.gray.shape
 		print "(height, width) (" + str(self.height) + " " + str(self.width) + ")"
 
@@ -18,8 +19,8 @@ class door_detector:
 		self.thresh = cv2.adaptiveThreshold(self.denoised,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,25,25) #thresh to change image to binary
 		self.edges = cv2.Canny(self.thresh,250,500) #canny edge detection
 		self.inv = cv2.bitwise_not(self.thresh)#inverse of the threshold resultant image, black background to subtract the mask.
-
 		#self.current_img = self.denoised	
+
 
 
 	def get_image(self):
@@ -150,6 +151,7 @@ class door_detector:
 		#function that selects the best matching square and draws it
 		most_ones = np.zeros((1, 1, 1), dtype = "uint8") #variable to save the best maching square
 		mask = None
+		self.ones = 0
 
 		for square in self.square_coords:
 			#img_door = self.current_img
@@ -183,6 +185,7 @@ class door_detector:
  			#the best machting rectangle over the door frame should return the highest number of 1s
 			img2 = cv2.bitwise_and(self.inv, img_door)
 
+
 			#checking number of 1s on the resultant image and picking the one that has the most
 			if img2.sum() > most_ones.sum():
 				#print img2.sum()
@@ -191,9 +194,14 @@ class door_detector:
 			#cv2.imshow('corner door', img2)
 
 			#cv2.waitKey()
+		cv2.imshow('corner door', mask)
+		cv2.waitKey()
+		print most_ones.sum()
+		self.ones = most_ones.sum()
 		return mask
 
-img = cv2.imread('door_image16.jpg')
+img = cv2.imread('ugly_door.jpg')
+
 
 detector = door_detector(img)
 
@@ -207,6 +215,16 @@ img2 = detector.get_image()
 
 mask = detector.draw()
 
+if mask is None:
+	print mask
+	print "door not founded"
+
+elif detector.ones < 400000 and len(detector.points) > 1000:
+	print "door not founded"
+
+
+else:
+	print "door founded"
 #cv2.imshow("img", detector.inv)
-cv2.imshow('corner door', cv2.add(detector.denoised, mask))
-cv2.waitKey()
+	cv2.imshow('corner door', cv2.add(detector.gray, mask))
+	cv2.waitKey()
