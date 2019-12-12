@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 import math
+import os
+import time
 
 
 class door_detector:
@@ -13,7 +15,7 @@ class door_detector:
 		self.gray = cv2.cvtColor(self.resized, cv2.COLOR_BGR2GRAY) #converting to grayscale
 
 		self.height, self.width = self.gray.shape
-		print "(height, width) (" + str(self.height) + " " + str(self.width) + ")"
+		print("(height, width) (" + str(self.height) + " " + str(self.width) + ")")
 
 		self.denoised = cv2.GaussianBlur(self.gray, (5,5), 0.8) #gaussian blur to remove abrupt corners or noise
 		self.thresh = cv2.adaptiveThreshold(self.denoised,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,25,25) #thresh to change image to binary
@@ -76,7 +78,7 @@ class door_detector:
 	
 		self.points = sorted(self.points, key = lambda x: x[0][0]) #sort it from its x coord
 		#print self.points
-		print "Number of horizontal lines: " + str(len(self.points))
+		print("Number of horizontal lines: ", str(len(self.points)))
 		return self.points
 
 
@@ -136,7 +138,7 @@ class door_detector:
 										#print line, next_line
 
 				#print (line, next_line)
-		print "Number of rectangles: " + str(len(self.square_coords))
+		print("Number of rectangles: " + str(len(self.square_coords)))
 
 	def calculate_direc(self, x1, y1, x2, y2):
 		y = y1 - y2
@@ -194,37 +196,58 @@ class door_detector:
 			#cv2.imshow('corner door', img2)
 
 			#cv2.waitKey()
-		cv2.imshow('corner door', mask)
-		cv2.waitKey()
-		print most_ones.sum()
+		#cv2.imshow('corner door', mask)
+		#cv2.waitKey()
+		print(most_ones.sum())
 		self.ones = most_ones.sum()
 		return mask
 
-img = cv2.imread('ugly_door.jpg')
+door =0
+notdoor = 0
+run = []
+files = [i for i in os.listdir("Test")]
+for file in files:
+
+	filepath = "Test/" + file
+	#print filepath
+	start = time.time()
+	img = cv2.imread(filepath)
+	#cv2.imshow('corner door', img)
+	#cv2.waitKey()
+	detector = door_detector(img)
+
+	detector.feature_extraction()
+	pontos = detector.choose_features()
+
+	detector.choose_squares()
+	#print pontos
+
+	img2 = detector.get_image()
+
+	mask = detector.draw()
+
+	if mask is None:
+		notdoor= notdoor +1
+		print(mask)
+		print("door not founded")
+
+	# elif detector.ones < 400000 and len(detector.points) > 1000:
+	# 	notdoor= notdoor +1
+	# 	print("door not founded")
 
 
-detector = door_detector(img)
+	else:
+		door= door +1
+		print "door founded"
+	#cv2.imshow("img", detector.inv)
+		#cv2.imshow('corner door', cv2.add(detector.gray, mask))
+		#cv2.waitKey()
+	end = time.time()
+	dif = end - start
+	run.append(dif)
+	#print run
 
-detector.feature_extraction()
-pontos = detector.choose_features()
-
-detector.choose_squares()
-#print pontos
-
-img2 = detector.get_image()
-
-mask = detector.draw()
-
-if mask is None:
-	print mask
-	print "door not founded"
-
-elif detector.ones < 400000 and len(detector.points) > 1000:
-	print "door not founded"
-
-
-else:
-	print "door founded"
-#cv2.imshow("img", detector.inv)
-	cv2.imshow('corner door', cv2.add(detector.gray, mask))
-	cv2.waitKey()
+print("doors: ", door)
+print("not doors: ", notdoor)
+print("mean running time: ", np.mean(run))
+print("stdev running time: ", np.std(run))
